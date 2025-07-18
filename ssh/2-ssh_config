@@ -1,7 +1,6 @@
-#!/usr/bin/env bash
-# SSH CONFIG
-
-Include /etc/ssh/ssh_config.d/*.conf
+# Your SSH client configuration must be configured to use the private key `~/.ssh/school`
+# Your SSH client configuration must be configured to refuse to authenticate using a password
 
 Host *
-	PasswordAuthentication no
+     PasswordAuthentication no
+     IdentifyFile ~/.ssh/school
