@@ -1,3 +1,5 @@
-Host *
+Host 6725-web-01
+    HostName 54.87.128.247
+    User ubuntu
     IdentityFile ~/.ssh/school
     PasswordAuthentication no
