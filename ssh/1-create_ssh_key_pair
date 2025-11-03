@@ -1,3 +1,3 @@
 #!/bin/env bash
 # Create a 4090-bit rsa key pair named school with passphrase betty
-ssh-keygen -t rsa -b 4090 -f school -N "betty"
+ssh-keygen -t rsa -b 4096 -f school -N "betty"
