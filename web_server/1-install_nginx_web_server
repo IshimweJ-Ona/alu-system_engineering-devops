@@ -9,6 +9,13 @@
 apt-get update -y
 apt-get install -y nginx
 
+# Ensure Nginx listens on port 80 (IPv4 and IPv6)
+sed -i 's/listen [0-9]* default_server;/listen 80 default_server;/g' /etc/nginx/sites-enabled/default
+sed -i 's/listen \[::\]:[0-9]* default_server;/listen [::]:80 default_server;/g' /etc/nginx/sites-enabled/default
+
+# Overwrite default index page with required content
 echo "Holberton School" > /var/www/html/index.html
 
+# Restart Nginx without using systemctl
 service nginx restart
+
