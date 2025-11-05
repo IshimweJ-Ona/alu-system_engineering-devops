@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Script to install and configure Nginx web server on Ubuntu
+# Requirements:
+# - Install Nginx
+# - Listen on port 80
+# - Root page must contain "Holberton School"
+
+# Update package list and install Nginx
+apt-get update -y
+apt-get install -y nginx
+
+echo "Holberton School" > /var/www/html/index.html
+
+service nginx restart
