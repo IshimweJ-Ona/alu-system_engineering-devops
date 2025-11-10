@@ -16,5 +16,5 @@ sed -i '/add_header X-Served-By/d' /etc/nginx/sites-available/default
 sed -i "/listen \[::\]:80 default_server;/a \    add_header X-Served-By \"$HOSTNAME\";" /etc/nginx/sites-available/default
 
 #Restart nginx to apply changes
-systemct restart nginx
+service restart nginx
 
