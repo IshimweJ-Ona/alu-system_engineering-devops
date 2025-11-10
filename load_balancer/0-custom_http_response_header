@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
-# Script configures nginx to include a custome header X-Served-By with hostname of server
+# Configures Nginx to include a custom header X-Served-By with the server hostname
 
-#Install nginx if not installed
+# Exit immediately if a command fails
+set -e
+
+# Install Nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Get the current server hostname
+# Get current hostname
 HOSTNAME=$(hostname)
 
-# Add the custome header inside the default nginx configuration file
-# Also remove any existing headerline with add_server X-Server-By to avoid duplicates
+# Remove any existing X-Served-By headers to avoid duplicates
 sed -i '/add_header X-Served-By/d' /etc/nginx/sites-available/default
 
-#Insert header inside the main server block after the listen directive
-sed -i "/listen \[::\]:80 default_server;/a \    add_header X-Served-By \"$HOSTNAME\";" /etc/nginx/sites-available/default
+# Add the header inside the server block
+sed -i "/server_name _;/a \    add_header X-Served-By \"$HOSTNAME\";" /etc/nginx/sites-available/default
 
-#Restart nginx to apply changes
+# Test Nginx configuration
+nginx -t || { echo "Nginx configuration test failed"; exit 1; }
+
+# Restart Nginx (compatible with older Ubuntu versions)
 service nginx restart
 
