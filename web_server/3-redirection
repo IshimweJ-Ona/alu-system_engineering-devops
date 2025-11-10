@@ -1,34 +1,17 @@
 #!/usr/bin/env bash
-# Script to configure Nginx on Ubuntu with a 301 redirect for /redirect_me
+# Script to configure Nginx with a 301 redirect safely
+# Installs Nginx, listens on port 80, and adds /redirect_me 301 redirect
 
-set -e
-
-# Update package list and install Nginx
+# Update and install nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Reset default Nginx configuration to a known good state
-cat <<'EOF' > /etc/nginx/sites-available/default
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+# Configure nginx to listen on port 80
+sed -i 's/listen [0-9]* default_server;/listen 80 default_server;/g' /etc/nginx/sites-enabled/default
+sed -i 's/listen \[::\]:[0-9]* default_server;/listen [::]:80 default_server;/g' /etc/nginx/sites-enabled/default
 
-    root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
-
-    server_name _;
-
-    location / {
-        try_files $uri $uri/ =404;
-    }
-}
-EOF
-
-# Ensure symlink exists
-ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-
-# Add /redirect_me redirect if it does not already exist
-if ! grep -q "location /redirect_me" /etc/nginx/sites-available/default; then
+# Add redirect to /redirect_me only if it doesn't exist
+if ! grep -q "location /redirect_me" /etc/nginx/sites-enabled/default; then
     awk '{
         print
         if ($0 ~ /server_name _;/) {
@@ -36,11 +19,11 @@ if ! grep -q "location /redirect_me" /etc/nginx/sites-available/default; then
             print "        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;"
             print "    }"
         }
-    }' /etc/nginx/sites-available/default > /tmp/default && mv /tmp/default /etc/nginx/sites-available/default
+    }' /etc/nginx/sites-enabled/default > /tmp/default && mv /tmp/default /etc/nginx/sites-enabled/default
 fi
 
-# Test Nginx configuration
+# Test nginx configuration
 nginx -t
 
-# Restart Nginx without using systemctl
+# Restart nginx
 service nginx restart
