@@ -1,0 +1,50 @@
+cript to configure Nginx with a custom 404 page
+# Sets up a new Ubuntu machine with Nginx, a redirect, and a custom 404 page
+
+# Exit on any error
+set -e
+
+# Update and install nginx
+apt-get update -y
+apt-get install -y nginx
+
+# Ensure Nginx listens on port 80
+sed -i 's/listen [0-9]* default_server;/listen 80 default_server;/g' /etc/nginx/sites-enabled/default
+sed -i 's/listen \[::\]:[0-9]* default_server;/listen [::]:80 default_server;/g' /etc/nginx/sites-enabled/default
+
+# Remove any existing /redirect_me location to avoid duplicates
+sed -i '/location \/redirect_me {/,/}/d' /etc/nginx/sites-enabled/default || true
+
+# Add /redirect_me location
+awk '{
+    print
+    if ($0 ~ /server_name _;/) {
+        print "    location /redirect_me {"
+        print "        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;"
+        print "    }"
+    }
+}' /etc/nginx/sites-enabled/default > /tmp/default && mv /tmp/default /etc/nginx/sites-enabled/default
+
+# Create a custom 404 page
+echo "Ceci n'est pas une page" > /var/www/html/404.html
+
+# Remove any existing custom 404 configuration
+sed -i '/error_page 404/c\' /etc/nginx/sites-enabled/default || true
+
+# Add custom 404 page configuration
+awk '{
+    print
+    if ($0 ~ /server_name _;/) {
+        print "    error_page 404 /404.html;"
+        print "    location = /404.html {"
+        print "        internal;"
+        print "    }"
+    }
+}' /etc/nginx/sites-enabled/default > /tmp/default && mv /tmp/default /etc/nginx/sites-enabled/default
+
+# Test Nginx configuration
+nginx -t || { echo "Nginx configuration test failed"; exit 1; }
+
+# Restart Nginx without systemctl
+service nginx restart
+
