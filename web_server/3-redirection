@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Install Nginx and add /redirect_me redirect
+# Script to configure Nginx on Ubuntu with a 301 redirect for /redirect_me
+
 set -e
 
-# Install nginx
+# Update package list and install Nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Ensure default config exists and listens on port 80
+# Reset default Nginx configuration to a known good state
 cat <<'EOF' > /etc/nginx/sites-available/default
 server {
     listen 80 default_server;
@@ -23,9 +24,10 @@ server {
 }
 EOF
 
+# Ensure symlink exists
 ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-# Add redirect block if it doesn't exist
+# Add /redirect_me redirect if it does not already exist
 if ! grep -q "location /redirect_me" /etc/nginx/sites-available/default; then
     awk '{
         print
@@ -37,6 +39,8 @@ if ! grep -q "location /redirect_me" /etc/nginx/sites-available/default; then
     }' /etc/nginx/sites-available/default > /tmp/default && mv /tmp/default /etc/nginx/sites-available/default
 fi
 
-# Test config and restart
+# Test Nginx configuration
 nginx -t
+
+# Restart Nginx without using systemctl
 service nginx restart
