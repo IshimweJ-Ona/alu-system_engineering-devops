@@ -15,11 +15,10 @@ HOSTNAME=$(hostname)
 sed -i '/add_header X-Served-By/d' /etc/nginx/sites-available/default
 
 # Add the header inside the server block
-sed -i "/server_name _;/a \    add_header X-Served-By \"$HOSTNAME\";" /etc/nginx/sites-available/default
+sed -i "/server_name _;/a \        add_header X-Served-By \"$HOSTNAME\";" /etc/nginx/sites-available/default
 
 # Test Nginx configuration
 nginx -t || { echo "Nginx configuration test failed"; exit 1; }
 
 # Restart Nginx (compatible with older Ubuntu versions)
 service nginx restart
-
