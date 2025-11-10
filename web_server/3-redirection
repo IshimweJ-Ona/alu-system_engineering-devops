@@ -1,46 +1,33 @@
 #!/usr/bin/env bash
-# Script to configure Nginx on Ubuntu with a 301 redirect for /redirect_me
+# Script to configure Nginx on a sandbox with a 301 redirect for /redirect_me
 
+# Exit on errors
 set -e
 
-# Update package list and install Nginx
+# Update and install nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Reset default Nginx configuration to a known good state
-cat <<'EOF' > /etc/nginx/sites-available/default
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+# Ensure nginx listens on port 80
+sed -i 's/listen [0-9]* default_server;/listen 80 default_server;/g' /etc/nginx/sites-enabled/default
+sed -i 's/listen \[::\]:[0-9]* default_server;/listen [::]:80 default_server;/g' /etc/nginx/sites-enabled/default
 
-    root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
+# Remove any existing /redirect_me location to avoid duplicates
+sed -i '/location \/redirect_me {/,/}/d' /etc/nginx/sites-enabled/default || true
 
-    server_name _;
-
-    location / {
-        try_files $uri $uri/ =404;
+# Add /redirect_me location
+awk '{
+    print
+    if ($0 ~ /server_name _;/) {
+        print "    location /redirect_me {"
+        print "        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;"
+        print "    }"
     }
-}
-EOF
+}' /etc/nginx/sites-enabled/default > /tmp/default && mv /tmp/default /etc/nginx/sites-enabled/default
 
-# Ensure symlink exists
-ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+# Test nginx configuration
+nginx -t || { echo "Nginx configuration test failed"; exit 1; }
 
-# Add /redirect_me redirect if it does not already exist
-if ! grep -q "location /redirect_me" /etc/nginx/sites-available/default; then
-    awk '{
-        print
-        if ($0 ~ /server_name _;/) {
-            print "    location /redirect_me {"
-            print "        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;"
-            print "    }"
-        }
-    }' /etc/nginx/sites-available/default > /tmp/default && mv /tmp/default /etc/nginx/sites-available/default
-fi
-
-# Test Nginx configuration
-nginx -t
-
-# Restart Nginx without using systemctl
+# Restart nginx without systemctl
 service nginx restart
+
