@@ -1,18 +1,42 @@
 #!/usr/bin/env bash
-# Script to configure Nginx with a 301 redirect
+# Install Nginx and add /redirect_me redirect
+set -e
 
-# Update and install nginx
+# Install nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Configure nginx to listen on port 80
-sed -i 's/listen [0-9]* default_server;/listen 80 default_server;/g' /etc/nginx/sites-enabled/default
-sed -i 's/listen \[::\]:[0-9]* default_server;/listen [::]:80 default_server;/g' /etc/nginx/sites-enabled/default
+# Ensure default config exists and listens on port 80
+cat <<'EOF' > /etc/nginx/sites-available/default
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
 
-# Add redirect to /redirect_me
-# This will insert the redirect inside the server block
-sed -i '/server_name _;/a \\tlocation /redirect_me {\n\t\treturn 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;\n\t}' /etc/nginx/sites-enabled/default
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
 
-# Restart nginx (without systemctl)
+    server_name _;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+EOF
+
+ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
+# Add redirect block if it doesn't exist
+if ! grep -q "location /redirect_me" /etc/nginx/sites-available/default; then
+    awk '{
+        print
+        if ($0 ~ /server_name _;/) {
+            print "    location /redirect_me {"
+            print "        return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;"
+            print "    }"
+        }
+    }' /etc/nginx/sites-available/default > /tmp/default && mv /tmp/default /etc/nginx/sites-available/default
+fi
+
+# Test config and restart
+nginx -t
 service nginx restart
-
