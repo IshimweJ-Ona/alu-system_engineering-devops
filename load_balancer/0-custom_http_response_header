@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #Configures nginx to add X-serve-By header and replicate web-01 features to web-02
 
 set -e
