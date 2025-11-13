@@ -1,24 +1,54 @@
-#!/usr/bin/env bash
-# Configures Nginx to include a custom header X-Served-By with the server hostname
+#!/bin/bash
+#Configures nginx to add X-serve-By header and replicate web-01 features to web-02
 
-# Exit immediately if a command fails
 set -e
 
-# Install Nginx
+
+#Update packages and install nginx if missing
 apt-get update -y
 apt-get install -y nginx
 
-# Get current hostname
+#Get erver host name
 HOSTNAME=$(hostname)
 
-# Remove any existing X-Served-By headers to avoid duplicates
-sed -i '/add_header X-Served-By/d' /etc/nginx/sites-available/default
+#Backup current default config (idempotent)
+if [ ! -f /etc/nginx/sites-available/default.bak ]; then
+        cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+fi
 
-# Add the header inside the server block
-sed -i "/server_name _;/a \        add_header X-Served-By \"$HOSTNAME\";" /etc/nginx/sites-available/default
+# 1. Add X-Served_By header if not already present
+grep -q 'add_header X-Served-By' /etc/nginx/sites-available/default || \
+        sed -i "/server_name _;/a \        add_header X-Served-By \"$HOSTNAME\";" /etc/nginx/sites-available/default
 
-# Test Nginx configuration
+
+# 2. Add /redirect_me location if not present
+if ! grep -q 'location /redirect_me' /etc/nginx/sites-available/default; then
+        sed -i "/server_name _;/a \\
+            location /redirect_me {\\
+                return 301 https://www.youtube.com/watch?v=QH2-TGUlwu4;\\
+            }" /etc/nginx/sites-available/default
+fi
+
+
+# 3. Add error_page directive if missing
+grep -q 'error_page 404' /etc/nginx/sites-available/default || \
+        sed -i "/server_name _;/a \        error_page 404 /404.html;" /etc/nginx/sites-available/default
+
+
+# 4. Copy custom 404 page from web-01 file it existss
+if [ -f "/home/ubuntu/5-design_a_beautiful_404_page.html" ]; then
+        cp /home/ubuntu/5-design_a_beautiful_404_page.html /var/www/html/404.html
+else
+        #fallback 404 page
+        echo "Ceci n'est pas une page" > /var/www/html/404.html
+fi
+
+# 5. Test Nginx configuration file before restarting it
 nginx -t || { echo "Nginx configuration test failed"; exit 1; }
 
-# Restart Nginx (compatible with older Ubuntu versions)
+# 6. Restart Nginx
 service nginx restart
+
+echo "Nginx configured successfully on $(hostname)"
+echo "X-Served-By header set to: $HOSTNAME"
+echo "Redirect /redirect_me and custom 404 page configure."
