@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Install load-balancer
+#Adds frontend and backend to existing haproxy /etc/haproxy/haproxy.cfg
+
+set -e
+
+
+# Update package and install haproxy if not installed
+apt-get update -y
+apt-get install -y haproxy
+
+# Enable haproxy to start
+sudo service haproxy start
+update-rc.d haproxy defaults
+
+# Web servers ip address
+WEB1_IP="54.87.128.247"
+WEB2_IP="34.230.38.47"
+
+
+# Backup original configuration (once)
+if [ ! -f /etc/haproxy/haproxy.cfg.bak ]; then
+        cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
+fi
+
+# Check if frontend already exists; if not add it
+if ! grep -q "^frontend http_front" /etc/haproxy/haproxy.cfg; then
+        cat >> /etc/haproxy/haproxy.cfg <<EOF
+
+frontend http_front
+    bind *:80
+    default_backend web_servers
+EOF
+fi
+
+
+# Check if backend already exists; if not add it
+if ! grep -q "^backend web_servers" /etc/haproxy/haproxy.cfg; then
+        cat >> /etc/haproxy/haproxy.cfg <<EOF
+
+
+backend web_servers
+    balance roundrobin
+    server 6725-web-01 $WEB1_IP:80 check
+    server 6725-web-02 $WEB2_IP:80 check
+    http-response set-header X-Served-By %[srv_name]
+
+EOF
+fi
+
+# Test haproxy configuration before restarting
+haproxy -c -f /etc/haproxy/haproxy.cfg || { echo "HAProxy configuration test fail"; exit 1; }
+
+# Restart haproxy
+sudo service haproxy restart
+
+echo "HAProxy configured successfully."
+echo "Traffic is load balanced between $WEB1_IP and $WEB2_IP using round-robin."
