@@ -41,8 +41,8 @@ if ! grep -q "^backend web_servers" /etc/haproxy/haproxy.cfg; then
 
 backend web_servers
     balance roundrobin
-    server 6725-web-01 $WEB1_IP:80 check
-    server 6725-web-02 $WEB2_IP:80 check
+    server web-01 $WEB1_IP:80 check
+    server web-02 $WEB2_IP:80 check
     http-response set-header X-Served-By %[srv_name]
 
 EOF
