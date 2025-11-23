@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
-# Fix Nginx to listen on all IPv4 addresses on port 80 and start the service (Ubuntu 14.04)
+# Fix Nginx to listen on all IPv4 addresses on port 80 and start the service
 
-# Update package list
+# Update packages
 apt-get update -y
 
-# Install Nginx if not installed
+# Install nginx if not already installed
 apt-get install -y nginx
 
-# Ensure the default site listens on all IPv4 addresses on port 80
+# Ensure the default site listens on all IPv4 addresses
 sed -i 's/listen 127.0.0.1:80 default_server;/listen 80 default_server;/' /etc/nginx/sites-available/default
 sed -i 's/listen \[::\]:80 default_server;/listen [::]:80 default_server;/' /etc/nginx/sites-available/default
 
-# Start Nginx service using Ubuntu 14.04 init system
-/etc/init.d/nginx restart
+# Enable default site
+ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+
+# Kill any process using port 80
+fuser -k 80/tcp 2>/dev/null || true
+
+# Restart Nginx (service first, fallback to direct start)
+if ! /etc/init.d/nginx restart; then
+    nginx
+fi
+
 
