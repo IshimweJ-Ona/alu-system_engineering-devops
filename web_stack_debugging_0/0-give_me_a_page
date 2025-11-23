@@ -1,0 +1,8 @@
+
+#!/usr/bin/env bash
+# Make Apache server that returns Hello Holberton
+
+sudo apt-get update -y
+sudo apt-get install -y apache2
+sudo /etc/init.d/apache2 start
+echo "Hello Holberton" > /var/www/html/index.html
