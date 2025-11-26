@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Configures Nginx workers to run as nginx and listen on port 8080
+
+# Ensure nginx user exists
+id -u nginx &>/dev/null || useradd -r -s /usr/sbin/nologin nginx
+
+# Update nginx main config to set worker user
+sed -i "s|^user .*|user nginx;|" /etc/nginx/nginx.conf
+
+# Update default site to listen on port 8080
+sed -i 's/listen 80 default_server;/listen 8080 default_server;/' /etc/nginx/sites-available/default
+sed -i 's/listen \[::\]:80 default_server;/listen [::]:8080 default_server;/' /etc/nginx/sites-available/default
+
+# Fix ownership for directories used by Nginx workers
+mkdir -p /var/run/nginx
+chown -R nginx:nginx /var/log/nginx /var/run/nginx /var/www/html
+
+# Test nginx configuration
+nginx -t
+
+# Stop any running nginx (ignore errors)
+service nginx stop 2>/dev/null
+
+# Start nginx fresh
+service nginx start
+
