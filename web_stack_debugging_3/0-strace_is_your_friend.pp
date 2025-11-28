@@ -14,8 +14,8 @@ exec { 'fix-permissions':
 }
 
 service { 'apache2':
-   ensure    => running,
-   enable    => true,
-   subscribe => [Exec['chown-www-data'], Exec['fix-permissions']],
+   ensure   => running,
+   enable   => true,
+   subscribe=> [Exec['chown-www-data'], Exec['fix-permissions']],
 }
 
