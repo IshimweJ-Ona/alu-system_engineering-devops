@@ -1,9 +1,4 @@
 # Ensure Apache can read and serve the web files by fixing ownership and permissions for /var/www/html
-# This manifest:
-#  - ensures web files are owned by www-data
-#  - sets directory permissions to 755 and file permissions to 644
-#  - ensures apache2 service is enabled and running
-#  - installs required PHP extensions
 
 exec { 'chown-www-data':
   command  => '/bin/chown -R www-data:www-data /var/www/html',
@@ -19,8 +14,8 @@ exec { 'fix-permissions':
 }
 
 service { 'apache2':
-  ensure   => running,
-  enable   => true,
-  subscribe => [Exec['chown-www-data'], Exec['fix-permissions']],
+  ensure     => running,
+  enable     => true,
+  subscribe  => [Exec['chown-www-data'], Exec['fix-permissions']],
 }
 
