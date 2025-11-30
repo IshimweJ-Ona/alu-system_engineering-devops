@@ -6,9 +6,8 @@ exec { 'set nginx ulimit':
 }
 
 exec { 'restart nginx':
-  command => 'service nginx restart',
+  command     => 'service nginx restart',
   refreshonly => true,
   subscribe   => Exec['set nginx ulimit'],
   path        => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
 }
-
